@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #EEF0E8;
+  --card: #F8F9F4;
+  --ink: #202B24;
+  --ink-soft: #57604F;
+  --line: #C7CBB9;
+  --oxblood: #6C2A34;
+  --forest: #33513A;
+  --amber: #93701F;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-body: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  border-color: var(--line);
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+}
+
+:focus-visible {
+  outline: 2px solid var(--oxblood);
+  outline-offset: 2px;
+}
