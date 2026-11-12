@@ -1,10 +1,12 @@
-import { TipoSolicitacao } from '../../../domain/enums/solicitacao.enums';
+import { Disciplina } from '../../../domain/entities/disciplina.entity';
+import { EventoSolicitacao, TipoSolicitacao } from '../../../domain/enums/solicitacao.enums';
+import { InMemoryDisciplinaRepository } from '../../../infrastructure/persistence/in-memory/in-memory-disciplina.repository';
 import {
   BusinessRuleError,
   ConflictError,
   NotFoundError,
 } from '../../../domain/errors/domain.errors';
-import { makeUseCases } from '../../../testing/make-use-cases';
+import { atores, makeUseCases } from '../../../testing/make-use-cases';
 
 describe('Disciplinas', () => {
   it('cria disciplina normalizando o código e barra código duplicado', async () => {
@@ -87,23 +89,77 @@ describe('Disciplinas', () => {
     );
   });
 
-  it('não exclui com solicitação pendente; exclui limpando referências', async () => {
+  it('não exclui disciplina com solicitações (em aberto ou histórico de auditoria)', async () => {
     const ctx = makeUseCases();
-    const s = await ctx.solicitacoes.criar.execute({
-      alunoId: 'aluno-3',
-      disciplinaId: 'disc-4',
-      tipo: TipoSolicitacao.MATRICULA,
-    });
-    await expect(ctx.disciplinas.excluir.execute('disc-4')).rejects.toThrow(
-      'pendentes',
+    const s = await ctx.solicitacoes.criar.execute(
+      { alunoId: 'aluno-3', disciplinaId: 'disc-4', tipo: TipoSolicitacao.MATRICULA },
+      atores.carla,
     );
+    await expect(ctx.disciplinas.excluir.execute('disc-4')).rejects.toThrow('em aberto');
 
-    await ctx.solicitacoes.rejeitar.execute(s.id);
-    await ctx.disciplinas.excluir.execute('disc-4');
-    expect(await ctx.repos.disciplinas.findById('disc-4')).toBeNull();
-    expect(await ctx.repos.solicitacoes.findById(s.id)).toBeNull();
+    await ctx.agir(s.id, EventoSolicitacao.CANCELAR, atores.carla, 'mudei de ideia');
+    await expect(ctx.disciplinas.excluir.execute('disc-4')).rejects.toThrow('trilha de auditoria');
+  });
 
-    await ctx.disciplinas.excluir.execute('disc-2');
-    expect((await ctx.repos.alunos.findById('aluno-3'))?.disciplinasConcluidas).toEqual(['disc-1']);
+  it('exclui disciplina livre limpando a referência nas disciplinas concluídas dos alunos', async () => {
+    const ctx = makeUseCases();
+    const extra = await ctx.disciplinas.criar.execute({ codigo: 'zzz100', nome: 'Extra', vagasTotais: 5 });
+    await ctx.alunos.atualizar.execute('aluno-3', {
+      nome: 'Carla Dias',
+      matricula: '2023003',
+      disciplinasConcluidas: ['disc-1', 'disc-2', extra.id],
+    });
+
+    await ctx.disciplinas.excluir.execute(extra.id);
+    expect(await ctx.repos.disciplinas.findById(extra.id)).toBeNull();
+    expect((await ctx.repos.alunos.findById('aluno-3'))?.disciplinasConcluidas).toEqual(['disc-1', 'disc-2']);
+  });
+
+  it('valida a grade de horários e preserva a grade quando a atualização não a informa', async () => {
+    const ctx = makeUseCases();
+    await expect(
+      ctx.disciplinas.criar.execute({
+        codigo: 'H1', nome: 'H', vagasTotais: 1,
+        horarios: [{ dia: 8, inicio: '08:00', fim: '10:00' }],
+      }),
+    ).rejects.toBeInstanceOf(BusinessRuleError);
+    await expect(
+      ctx.disciplinas.criar.execute({
+        codigo: 'H2', nome: 'H', vagasTotais: 1,
+        horarios: [{ dia: 1, inicio: '10:00', fim: '08:00' }],
+      }),
+    ).rejects.toThrow('anterior ao fim');
+    await expect(
+      ctx.disciplinas.criar.execute({
+        codigo: 'H3', nome: 'H', vagasTotais: 1,
+        horarios: [{ dia: 1, inicio: '08:00', fim: '10:00' }, { dia: 1, inicio: '09:00', fim: '11:00' }],
+      }),
+    ).rejects.toThrow('sobrepostos');
+
+    const antes = (await ctx.repos.disciplinas.findById('disc-1'))!.horarios;
+    const d = await ctx.disciplinas.atualizar.execute('disc-1', { codigo: 'ALG101', nome: 'Algoritmos I', vagasTotais: 2 });
+    expect(d.horarios).toEqual(antes);
+  });
+
+  it('valida existência de N pré-requisitos com UMA consulta em lote (sem N+1)', async () => {
+    class Contador extends InMemoryDisciplinaRepository {
+      porId = 0;
+      emLote = 0;
+      findById(id: string) { this.porId++; return super.findById(id); }
+      findByIds(ids: string[]) { this.emLote++; return super.findByIds(ids); }
+    }
+    const repo = new Contador();
+    const ctx = makeUseCases({ disciplinas: repo });
+    for (let i = 0; i < 20; i++) {
+      await repo.save(new Disciplina({ id: `p-${i}`, codigo: `P${i}`, nome: `P${i}`, vagasTotais: 1 }));
+    }
+    repo.porId = 0;
+    repo.emLote = 0;
+    await ctx.disciplinas.criar.execute({
+      codigo: 'BIG1', nome: 'Muitos pré-requisitos', vagasTotais: 1,
+      preRequisitos: Array.from({ length: 20 }, (_, i) => `p-${i}`),
+    });
+    expect(repo.emLote).toBe(1);
+    expect(repo.porId).toBe(0);
   });
 });

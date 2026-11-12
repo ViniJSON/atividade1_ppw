@@ -22,14 +22,15 @@ export class ExcluirAlunoUseCase {
         'Não é possível excluir: o aluno está matriculado em disciplinas',
       );
     }
+    // A trilha de auditoria é preservada: quem tem solicitações registradas não pode ser apagado.
     const doAluno = await this.solicitacoes.findByAlunoId(id);
-    if (doAluno.some((s) => s.estaPendente())) {
+    if (doAluno.length > 0) {
       throw new BusinessRuleError(
-        'Não é possível excluir: o aluno possui solicitações pendentes',
+        doAluno.some((s) => s.estaAberta())
+          ? 'Não é possível excluir: o aluno possui solicitações em aberto'
+          : 'Não é possível excluir: o aluno possui histórico de solicitações (trilha de auditoria preservada)',
       );
     }
-
-    for (const s of doAluno) await this.solicitacoes.delete(s.id);
     await this.alunos.delete(id);
   }
 }

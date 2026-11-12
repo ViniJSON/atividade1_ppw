@@ -34,14 +34,16 @@ export class ExcluirDisciplinaUseCase {
       );
     }
 
+    // A trilha de auditoria é preservada: disciplina com solicitações registradas não pode ser apagada.
     const doDisciplina = await this.solicitacoes.findByDisciplinaId(id);
-    if (doDisciplina.some((s) => s.estaPendente())) {
+    if (doDisciplina.length > 0) {
       throw new BusinessRuleError(
-        'Não é possível excluir: há solicitações pendentes para esta disciplina',
+        doDisciplina.some((s) => s.estaAberta())
+          ? 'Não é possível excluir: há solicitações em aberto para esta disciplina'
+          : 'Não é possível excluir: há histórico de solicitações desta disciplina (trilha de auditoria preservada)',
       );
     }
 
-    for (const s of doDisciplina) await this.solicitacoes.delete(s.id);
     for (const aluno of alunos) {
       if (aluno.disciplinasConcluidas.includes(id)) {
         aluno.removerConcluida(id);
