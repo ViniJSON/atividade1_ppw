@@ -3,6 +3,7 @@ import { Response } from 'express';
 import {
   ConflictError,
   DomainError,
+  ForbiddenError,
   NotFoundError,
 } from '../../../domain/errors/domain.errors';
 
@@ -13,7 +14,10 @@ export class DomainExceptionFilter implements ExceptionFilter<DomainError> {
 
     let statusCode = 400;
     let label = 'Bad Request';
-    if (error instanceof NotFoundError) {
+    if (error instanceof ForbiddenError) {
+      statusCode = 403;
+      label = 'Forbidden';
+    } else if (error instanceof NotFoundError) {
       statusCode = 404;
       label = 'Not Found';
     } else if (error instanceof ConflictError) {
