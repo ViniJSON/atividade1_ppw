@@ -1,0 +1,25 @@
+# Sobe só o PostgreSQL; a API (NestJS) e o front (Next.js) rodam localmente com npm.
+# O schema e o seed são aplicados automaticamente na PRIMEIRA subida do volume.
+# Para recomeçar do zero: docker compose down -v && docker compose up -d
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: matricula-db
+    environment:
+      POSTGRES_USER: matricula
+      POSTGRES_PASSWORD: matricula
+      POSTGRES_DB: matricula
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U matricula -d matricula"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
