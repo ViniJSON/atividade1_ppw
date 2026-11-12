@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { api, mensagemDeErro } from '@/lib/api';
 import { useLoad } from '@/hooks/useLoad';
+import { DIAS } from '@/lib/solicitacao-ui';
 import { Disciplina } from '@/types';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -79,6 +80,10 @@ export function DisciplinasList({ aviso }: { aviso?: string }) {
             </div>
             <p className="mt-1.5 text-xs text-[var(--ink-soft)]">
               Pré-requisitos: {d.preRequisitos.map(nomeDisciplina).join(', ') || 'nenhum'}
+            </p>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">
+              Horários:{' '}
+              {d.horarios.map((h) => `${DIAS[h.dia]} ${h.inicio}–${h.fim}`).join(' · ') || 'não informados'}
             </p>
           </div>
           <div className="flex shrink-0 gap-2">

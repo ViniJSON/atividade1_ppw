@@ -2,7 +2,6 @@ import { SolicitacoesList } from '@/components/modules/matriculas/solicitacoes/S
 
 const avisos: Record<string, string> = {
   incluida: 'Solicitação registrada, aguardando validação da coordenação.',
-  alterada: 'Solicitação alterada com sucesso.',
 };
 
 export default async function SolicitacoesPage({

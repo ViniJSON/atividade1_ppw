@@ -1,5 +1,34 @@
 export type TipoSolicitacao = 'MATRICULA' | 'TRANCAMENTO';
-export type StatusSolicitacao = 'PENDENTE' | 'APROVADA' | 'REJEITADA';
+export type StatusSolicitacao =
+  | 'PENDENTE'
+  | 'EM_ANALISE'
+  | 'AJUSTE_SOLICITADO'
+  | 'APROVADA'
+  | 'CONCLUIDA'
+  | 'REJEITADA'
+  | 'CANCELADA'
+  | 'EXPIRADA'
+  | 'ESTORNADA';
+
+/** Eventos que o usuário pode disparar (CRIAR/ESCALONAR/EXPIRAR são internos). */
+export type AcaoSolicitacao =
+  | 'INICIAR_ANALISE'
+  | 'SOLICITAR_AJUSTE'
+  | 'REENVIAR'
+  | 'APROVAR'
+  | 'REJEITAR'
+  | 'CONCLUIR'
+  | 'CANCELAR'
+  | 'ESTORNAR';
+
+export type Papel = 'ALUNO' | 'COORDENADOR' | 'SECRETARIA';
+
+export interface Horario {
+  /** 1 = segunda … 7 = domingo */
+  dia: number;
+  inicio: string;
+  fim: string;
+}
 
 export interface Aluno {
   id: string;
@@ -16,6 +45,7 @@ export interface Disciplina {
   vagasTotais: number;
   vagasOcupadas: number;
   preRequisitos: string[];
+  horarios: Horario[];
 }
 
 export interface Solicitacao {
@@ -26,9 +56,35 @@ export interface Solicitacao {
   status: StatusSolicitacao;
   preRequisitosOk: boolean;
   vagaDisponivel: boolean;
-  motivoRejeicao?: string;
+  semConflitoHorario: boolean;
+  ultimaJustificativa?: string;
   criadoEm: string;
-  avaliadoEm?: string;
+  atualizadoEm: string;
+  prazoLimite: string;
+  escalonarEm: string;
+  escalonadaEm?: string;
+  versao: number;
+  /** Ações que o perfil atual pode tentar neste estado (vem da máquina de estados do servidor). */
+  acoesPermitidas: AcaoSolicitacao[];
+}
+
+export interface HistoricoItem {
+  id: string;
+  idRegistro: string;
+  evento: AcaoSolicitacao | 'CRIAR' | 'ESCALONAR' | 'EXPIRAR';
+  estadoAnterior: StatusSolicitacao | null;
+  novoEstado: StatusSolicitacao;
+  autorId: string;
+  autorPapel: Papel | 'SISTEMA';
+  justificativa: string | null;
+  metadados: Record<string, unknown>;
+  timestamp: string;
+}
+
+export interface ResultadoSla {
+  expiradas: string[];
+  escalonadas: string[];
+  falhas: { id: string; evento: string; erro: string }[];
 }
 
 export interface AlunoInput {
@@ -42,6 +98,7 @@ export interface DisciplinaInput {
   nome: string;
   vagasTotais: number;
   preRequisitos: string[];
+  horarios: Horario[];
 }
 
 export interface SolicitacaoInput {

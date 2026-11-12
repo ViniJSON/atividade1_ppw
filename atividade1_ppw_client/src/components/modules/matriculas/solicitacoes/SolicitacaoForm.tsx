@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { api, mensagemDeErro } from '@/lib/api';
-import { Aluno, Disciplina, Solicitacao, TipoSolicitacao } from '@/types';
+import { Aluno, Disciplina, TipoSolicitacao } from '@/types';
+import { usePerfil } from '@/components/layout/PerfilProvider';
 import { Alert } from '@/components/ui/alert';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,22 +13,20 @@ import { Field } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 
 export function SolicitacaoForm({
-  solicitacao,
   alunos,
   disciplinas,
 }: {
-  solicitacao?: Solicitacao;
   alunos: Aluno[];
   disciplinas: Disciplina[];
 }) {
   const router = useRouter();
-  const editando = Boolean(solicitacao);
+  const perfil = usePerfil();
+  // Aluno só abre pedido para si; a secretaria escolhe o aluno. O servidor valida de novo.
+  const souAluno = perfil.papel === 'ALUNO';
 
-  const [alunoId, setAlunoId] = useState(solicitacao?.alunoId ?? alunos[0]?.id ?? '');
-  const [disciplinaId, setDisciplinaId] = useState(
-    solicitacao?.disciplinaId ?? disciplinas[0]?.id ?? '',
-  );
-  const [tipo, setTipo] = useState<TipoSolicitacao>(solicitacao?.tipo ?? 'MATRICULA');
+  const [alunoId, setAlunoId] = useState(souAluno ? perfil.id : (alunos[0]?.id ?? ''));
+  const [disciplinaId, setDisciplinaId] = useState(disciplinas[0]?.id ?? '');
+  const [tipo, setTipo] = useState<TipoSolicitacao>('MATRICULA');
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -38,10 +37,8 @@ export function SolicitacaoForm({
     setErro(null);
     setEnviando(true);
     try {
-      const dados = { alunoId, disciplinaId, tipo };
-      if (solicitacao) await api.solicitacoes.atualizar(solicitacao.id, dados);
-      else await api.solicitacoes.criar(dados);
-      router.push(`/solicitacoes?ok=${editando ? 'alterada' : 'incluida'}`);
+      await api.solicitacoes.criar({ alunoId, disciplinaId, tipo });
+      router.push('/solicitacoes?ok=incluida');
     } catch (err) {
       setErro(mensagemDeErro(err, 'Erro ao salvar solicitação'));
       setEnviando(false);
@@ -51,7 +48,7 @@ export function SolicitacaoForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{editando ? 'Alterar solicitação' : 'Registrar solicitação'}</CardTitle>
+        <CardTitle>Registrar solicitação</CardTitle>
       </CardHeader>
       <CardContent>
         {semDados ? (
@@ -80,7 +77,12 @@ export function SolicitacaoForm({
             </div>
 
             <Field label="Aluno" htmlFor="aluno">
-              <Select id="aluno" value={alunoId} onChange={(e) => setAlunoId(e.target.value)}>
+              <Select
+                id="aluno"
+                value={alunoId}
+                disabled={souAluno}
+                onChange={(e) => setAlunoId(e.target.value)}
+              >
                 {alunos.map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.nome} — matrícula {a.matricula}
@@ -107,7 +109,7 @@ export function SolicitacaoForm({
 
             <div className="flex gap-3">
               <Button type="submit" disabled={enviando}>
-                {enviando ? 'Salvando…' : editando ? 'Salvar alterações' : 'Enviar solicitação'}
+                {enviando ? 'Enviando…' : 'Enviar solicitação'}
               </Button>
               <Link href="/solicitacoes" className={buttonClasses('outline')}>
                 Cancelar

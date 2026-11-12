@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { api, mensagemDeErro } from '@/lib/api';
 import { dependentesDe } from '@/lib/pre-requisitos';
-import { Disciplina } from '@/types';
+import { Disciplina, Horario } from '@/types';
 import { Alert } from '@/components/ui/alert';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckboxGroup } from '@/components/ui/checkbox-group';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { HorariosEditor } from './HorariosEditor';
 
 export function DisciplinaForm({
   disciplina,
@@ -27,6 +28,7 @@ export function DisciplinaForm({
   const [nome, setNome] = useState(disciplina?.nome ?? '');
   const [vagasTotais, setVagasTotais] = useState(String(disciplina?.vagasTotais ?? 30));
   const [preRequisitos, setPreRequisitos] = useState<string[]>(disciplina?.preRequisitos ?? []);
+  const [horarios, setHorarios] = useState<Horario[]>(disciplina?.horarios ?? []);
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -52,6 +54,7 @@ export function DisciplinaForm({
         nome,
         vagasTotais: Number(vagasTotais),
         preRequisitos,
+        horarios,
       };
       if (disciplina) await api.disciplinas.atualizar(disciplina.id, dados);
       else await api.disciplinas.criar(dados);
@@ -118,6 +121,10 @@ export function DisciplinaForm({
               onChange={setPreRequisitos}
               emptyText="Não há outras disciplinas para usar como pré-requisito."
             />
+          </Field>
+
+          <Field label="Horários semanais">
+            <HorariosEditor value={horarios} onChange={setHorarios} />
           </Field>
 
           {erro && <Alert>{erro}</Alert>}

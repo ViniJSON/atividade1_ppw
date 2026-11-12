@@ -1,8 +1,12 @@
+import { perfilAtual } from '@/lib/perfil';
 import {
+  AcaoSolicitacao,
   Aluno,
   AlunoInput,
   Disciplina,
   DisciplinaInput,
+  HistoricoItem,
+  ResultadoSla,
   Solicitacao,
   SolicitacaoInput,
 } from '@/types';
@@ -15,7 +19,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     res = await fetch(`${API_URL}${path}`, {
       ...options,
       cache: 'no-store',
-      headers: { 'Content-Type': 'application/json', ...options.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        // Identificação do ator (simplificação didática; em produção viria de um token de login).
+        'X-Actor-Id': perfilAtual().id,
+        'X-Actor-Role': perfilAtual().papel,
+        ...options.headers,
+      },
     });
   } catch {
     throw new Error(
@@ -67,18 +77,16 @@ export const api = {
   solicitacoes: {
     listar: () => request<Solicitacao[]>('/matriculas/solicitacoes'),
     buscar: (id: string) => request<Solicitacao>(`/matriculas/solicitacoes/${id}`),
+    historico: (id: string) => request<HistoricoItem[]>(`/matriculas/solicitacoes/${id}/historico`),
     criar: (data: SolicitacaoInput) =>
       request<Solicitacao>('/matriculas/solicitacoes', { method: 'POST', body: json(data) }),
-    atualizar: (id: string, data: SolicitacaoInput) =>
-      request<Solicitacao>(`/matriculas/solicitacoes/${id}`, { method: 'PUT', body: json(data) }),
-    excluir: (id: string) =>
-      request<void>(`/matriculas/solicitacoes/${id}`, { method: 'DELETE' }),
-    aprovar: (id: string) =>
-      request<Solicitacao>(`/matriculas/solicitacoes/${id}/aprovar`, { method: 'PATCH' }),
-    rejeitar: (id: string, motivo?: string) =>
-      request<Solicitacao>(`/matriculas/solicitacoes/${id}/rejeitar`, {
-        method: 'PATCH',
-        body: json({ motivo }),
-      }),
+    /** Não existe PUT/DELETE nem edição de status: tudo é uma ação nomeada da máquina de estados. */
+    acao: (id: string, acao: AcaoSolicitacao, justificativa?: string) =>
+      request<Solicitacao>(
+        `/matriculas/solicitacoes/${id}/${acao.toLowerCase().replace(/_/g, '-')}`,
+        { method: 'PATCH', body: json({ justificativa }) },
+      ),
+    processarSla: () =>
+      request<ResultadoSla>('/matriculas/solicitacoes/sla/processar', { method: 'POST' }),
   },
 };
