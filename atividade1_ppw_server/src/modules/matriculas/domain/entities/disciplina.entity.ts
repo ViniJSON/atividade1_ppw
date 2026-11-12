@@ -1,4 +1,5 @@
 import { BusinessRuleError } from '../errors/domain.errors';
+import { Horario, horariosConflitam, validarHorario } from '../value-objects/horario';
 
 export interface DisciplinaProps {
   id: string;
@@ -7,6 +8,7 @@ export interface DisciplinaProps {
   vagasTotais: number;
   vagasOcupadas?: number;
   preRequisitos?: string[];
+  horarios?: Horario[];
 }
 
 export interface DadosDisciplina {
@@ -14,6 +16,7 @@ export interface DadosDisciplina {
   nome: string;
   vagasTotais: number;
   preRequisitos: string[];
+  horarios: Horario[];
 }
 
 export class Disciplina {
@@ -23,6 +26,7 @@ export class Disciplina {
   vagasTotais: number;
   vagasOcupadas: number;
   preRequisitos: string[];
+  horarios: Horario[];
 
   constructor(props: DisciplinaProps) {
     this.id = props.id;
@@ -31,6 +35,20 @@ export class Disciplina {
     this.vagasTotais = props.vagasTotais;
     this.vagasOcupadas = props.vagasOcupadas ?? 0;
     this.preRequisitos = [...new Set(props.preRequisitos ?? [])];
+    this.horarios = Disciplina.validarGrade(props.horarios ?? []);
+  }
+
+  /** Valida cada faixa e impede sobreposição entre faixas da própria disciplina. */
+  static validarGrade(horarios: Horario[]): Horario[] {
+    horarios.forEach(validarHorario);
+    for (let i = 0; i < horarios.length; i++) {
+      for (let j = i + 1; j < horarios.length; j++) {
+        if (horariosConflitam(horarios[i], horarios[j])) {
+          throw new BusinessRuleError('A disciplina possui horários sobrepostos entre si');
+        }
+      }
+    }
+    return horarios.map((h) => ({ ...h }));
   }
 
   static normalizarCodigo(codigo: string): string {
@@ -67,5 +85,6 @@ export class Disciplina {
     this.nome = dados.nome.trim();
     this.vagasTotais = dados.vagasTotais;
     this.preRequisitos = [...new Set(dados.preRequisitos)];
+    this.horarios = Disciplina.validarGrade(dados.horarios);
   }
 }

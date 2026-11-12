@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Disciplina } from '../../../domain/entities/disciplina.entity';
 import { ConflictError } from '../../../domain/errors/domain.errors';
+import { Horario } from '../../../domain/value-objects/horario';
 import { DisciplinaRepository } from '../../../domain/repositories/disciplina.repository';
 import { garantirDisciplinasExistem } from '../../shared/garantir-disciplinas-existem';
 
@@ -10,6 +11,7 @@ export interface CriarDisciplinaInput {
   nome: string;
   vagasTotais: number;
   preRequisitos?: string[];
+  horarios?: Horario[];
 }
 
 @Injectable()
@@ -30,6 +32,7 @@ export class CriarDisciplinaUseCase {
       nome: input.nome,
       vagasTotais: input.vagasTotais,
       preRequisitos,
+      horarios: input.horarios,
     });
     await this.disciplinas.save(disciplina);
     return disciplina;

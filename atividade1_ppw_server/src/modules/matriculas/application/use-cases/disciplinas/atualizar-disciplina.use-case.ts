@@ -6,7 +6,7 @@ import {
   NotFoundError,
 } from '../../../domain/errors/domain.errors';
 import { DisciplinaRepository } from '../../../domain/repositories/disciplina.repository';
-import { criaCicloDePreRequisitos } from '../../../domain/services/pre-requisitos';
+import { Horario } from '../../../domain/value-objects/horario';
 import { garantirDisciplinasExistem } from '../../shared/garantir-disciplinas-existem';
 
 export interface AtualizarDisciplinaInput {
@@ -14,6 +14,8 @@ export interface AtualizarDisciplinaInput {
   nome: string;
   vagasTotais: number;
   preRequisitos?: string[];
+  /** Se omitido, a grade atual é preservada. */
+  horarios?: Horario[];
 }
 
 @Injectable()
@@ -36,8 +38,9 @@ export class AtualizarDisciplinaUseCase {
     const preRequisitos = input.preRequisitos ?? [];
     await garantirDisciplinasExistem(this.disciplinas, preRequisitos);
 
-    const todas = await this.disciplinas.findAll();
-    if (criaCicloDePreRequisitos(id, preRequisitos, todas)) {
+    // Uma consulta (CTE recursiva no Postgres) em vez de carregar todas as disciplinas.
+    const alcancaveis = await this.disciplinas.preRequisitosTransitivos(preRequisitos);
+    if (alcancaveis.has(id)) {
       throw new BusinessRuleError(
         'Os pré-requisitos informados criam uma dependência circular',
       );
@@ -48,6 +51,7 @@ export class AtualizarDisciplinaUseCase {
       nome: input.nome,
       vagasTotais: input.vagasTotais,
       preRequisitos,
+      horarios: input.horarios ?? disciplina.horarios,
     });
     await this.disciplinas.save(disciplina);
     return disciplina;
