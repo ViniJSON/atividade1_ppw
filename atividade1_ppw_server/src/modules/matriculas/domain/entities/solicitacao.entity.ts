@@ -1,8 +1,5 @@
-import { BusinessRuleError } from '../errors/domain.errors';
-import {
-  StatusSolicitacao,
-  TipoSolicitacao,
-} from '../enums/solicitacao.enums';
+import { StatusSolicitacao, STATUS_ABERTOS, TipoSolicitacao } from '../enums/solicitacao.enums';
+import { adicionarDias, SlaConfig } from '../workflow/sla';
 
 export interface SolicitacaoProps {
   id: string;
@@ -10,87 +7,109 @@ export interface SolicitacaoProps {
   disciplinaId: string;
   tipo: TipoSolicitacao;
   status?: StatusSolicitacao;
+  /** Indicadores calculados no momento do pedido (informativos; as guardas reavaliam na aprovação/conclusão). */
   preRequisitosOk: boolean;
   vagaDisponivel: boolean;
-  motivoRejeicao?: string;
-  criadoEm?: string;
-  avaliadoEm?: string;
+  semConflitoHorario: boolean;
+  ultimaJustificativa?: string;
+  criadoEm: string;
+  atualizadoEm?: string;
+  prazoLimite: string;
+  escalonarEm: string;
+  escalonadaEm?: string;
+  /** 0 = ainda não persistida. Incrementada a cada save (controle otimista de concorrência). */
+  versao?: number;
 }
 
-export interface DadosSolicitacao {
+export interface DadosNovaSolicitacao {
+  id: string;
   alunoId: string;
   disciplinaId: string;
   tipo: TipoSolicitacao;
   preRequisitosOk: boolean;
   vagaDisponivel: boolean;
+  semConflitoHorario: boolean;
 }
 
 export class Solicitacao {
   readonly id: string;
-  alunoId: string;
-  disciplinaId: string;
-  tipo: TipoSolicitacao;
-  status: StatusSolicitacao;
-  preRequisitosOk: boolean;
-  vagaDisponivel: boolean;
-  motivoRejeicao?: string;
+  readonly alunoId: string;
+  readonly disciplinaId: string;
+  readonly tipo: TipoSolicitacao;
+  readonly preRequisitosOk: boolean;
+  readonly vagaDisponivel: boolean;
+  readonly semConflitoHorario: boolean;
   readonly criadoEm: string;
-  avaliadoEm?: string;
+
+  // `_status` é privado de propósito: não existe setter público. A única porta de
+  // mudança é `transitarPara`, chamada pelo TransicionarSolicitacaoUseCase após
+  // validar regra, papel e guardas da máquina de estados.
+  private _status: StatusSolicitacao;
+  ultimaJustificativa?: string;
+  atualizadoEm: string;
+  prazoLimite: string;
+  escalonarEm: string;
+  escalonadaEm?: string;
+  versao: number;
 
   constructor(props: SolicitacaoProps) {
     this.id = props.id;
     this.alunoId = props.alunoId;
     this.disciplinaId = props.disciplinaId;
     this.tipo = props.tipo;
-    this.status = props.status ?? StatusSolicitacao.PENDENTE;
+    this._status = props.status ?? StatusSolicitacao.PENDENTE;
     this.preRequisitosOk = props.preRequisitosOk;
     this.vagaDisponivel = props.vagaDisponivel;
-    this.motivoRejeicao = props.motivoRejeicao;
-    this.criadoEm = props.criadoEm ?? new Date().toISOString();
-    this.avaliadoEm = props.avaliadoEm;
+    this.semConflitoHorario = props.semConflitoHorario;
+    this.ultimaJustificativa = props.ultimaJustificativa;
+    this.criadoEm = props.criadoEm;
+    this.atualizadoEm = props.atualizadoEm ?? props.criadoEm;
+    this.prazoLimite = props.prazoLimite;
+    this.escalonarEm = props.escalonarEm;
+    this.escalonadaEm = props.escalonadaEm;
+    this.versao = props.versao ?? 0;
   }
 
-  estaPendente(): boolean {
-    return this.status === StatusSolicitacao.PENDENTE;
+  static abrir(dados: DadosNovaSolicitacao, agora: Date, sla: SlaConfig): Solicitacao {
+    return new Solicitacao({
+      ...dados,
+      criadoEm: agora.toISOString(),
+      prazoLimite: adicionarDias(agora, sla.prazoDias).toISOString(),
+      escalonarEm: adicionarDias(agora, sla.escalonamentoDias).toISOString(),
+    });
   }
 
-  atualizar(dados: DadosSolicitacao): void {
-    if (!this.estaPendente()) {
-      throw new BusinessRuleError(
-        'Só é possível alterar solicitações pendentes',
-      );
-    }
-    this.alunoId = dados.alunoId;
-    this.disciplinaId = dados.disciplinaId;
-    this.tipo = dados.tipo;
-    this.preRequisitosOk = dados.preRequisitosOk;
-    this.vagaDisponivel = dados.vagaDisponivel;
+  get status(): StatusSolicitacao {
+    return this._status;
   }
 
-  aprovar(): void {
-    this.garantirPendente();
-    this.status = StatusSolicitacao.APROVADA;
-    this.avaliadoEm = new Date().toISOString();
+  estaAberta(): boolean {
+    return STATUS_ABERTOS.includes(this._status);
   }
 
-  rejeitar(motivo?: string): void {
-    this.garantirPendente();
-    this.status = StatusSolicitacao.REJEITADA;
-    this.motivoRejeicao = motivo?.trim() || 'Não informado';
-    this.avaliadoEm = new Date().toISOString();
+  prazoVencido(agora: Date): boolean {
+    return agora.getTime() > new Date(this.prazoLimite).getTime();
   }
 
-  garantirPodeSerExcluida(): void {
-    if (this.status === StatusSolicitacao.APROVADA) {
-      throw new BusinessRuleError(
-        'Solicitações aprovadas já foram efetivadas e não podem ser excluídas',
-      );
-    }
+  escalonamentoDevido(agora: Date): boolean {
+    return !this.escalonadaEm && agora.getTime() >= new Date(this.escalonarEm).getTime();
   }
 
-  private garantirPendente(): void {
-    if (!this.estaPendente()) {
-      throw new BusinessRuleError('Solicitação já foi avaliada');
-    }
+  /** Uso exclusivo da máquina de estados. `novo === atual` é válido (ex.: ESCALONAR mantém o estado). */
+  transitarPara(novo: StatusSolicitacao, agora: Date, justificativa?: string): void {
+    this._status = novo;
+    this.atualizadoEm = agora.toISOString();
+    if (justificativa) this.ultimaJustificativa = justificativa;
+  }
+
+  /** Após REENVIAR o relógio do SLA recomeça. */
+  reiniciarPrazo(agora: Date, sla: SlaConfig): void {
+    this.prazoLimite = adicionarDias(agora, sla.prazoDias).toISOString();
+    this.escalonarEm = adicionarDias(agora, sla.escalonamentoDias).toISOString();
+    this.escalonadaEm = undefined;
+  }
+
+  marcarEscalonada(agora: Date): void {
+    this.escalonadaEm = agora.toISOString();
   }
 }
