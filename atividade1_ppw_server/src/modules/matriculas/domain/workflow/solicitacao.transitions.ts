@@ -14,12 +14,6 @@ import {
 import { SlaConfig } from './sla';
 import { MANTER_ESTADO, TransitionRule } from './types';
 
-/**
- * ÚNICO lugar onde o fluxo é definido: estados, eventos, matriz RBAC e guardas.
- * Cada guarda é uma instância reutilizável; as de elegibilidade rodam duas vezes de propósito:
- * em APROVAR (decisão da coordenação) e em CONCLUIR (reconferência sob lock, porque o mundo
- * pode ter mudado entre aprovar e efetivar).
- */
 export function criarRegrasDeTransicao(sla: SlaConfig): TransitionRule[] {
   const justificativa = new JustificativaObrigatoriaGuard();
   const solicitante = new SolicitanteGuard();
@@ -71,7 +65,6 @@ export function criarRegrasDeTransicao(sla: SlaConfig): TransitionRule[] {
       guards: [justificativa],
     },
     {
-      // Separação de funções: quem aprova (coordenação) não é quem efetiva (secretaria).
       evento: E.CONCLUIR,
       de: [S.APROVADA],
       para: S.CONCLUIDA,
@@ -80,7 +73,6 @@ export function criarRegrasDeTransicao(sla: SlaConfig): TransitionRule[] {
       efeito: 'EFETIVAR',
     },
     {
-      // Cancelamento ANTES da efetivação: nada foi aplicado, então nada há para desfazer.
       evento: E.CANCELAR,
       de: [S.PENDENTE, S.EM_ANALISE, S.AJUSTE_SOLICITADO, S.APROVADA],
       para: S.CANCELADA,
@@ -88,7 +80,6 @@ export function criarRegrasDeTransicao(sla: SlaConfig): TransitionRule[] {
       guards: [solicitante, justificativa],
     },
     {
-      // Cancelamento DEPOIS da efetivação: compensação (devolve vaga / restaura matrícula).
       evento: E.ESTORNAR,
       de: [S.CONCLUIDA],
       para: S.ESTORNADA,

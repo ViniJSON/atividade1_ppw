@@ -47,7 +47,6 @@ export const criarDisciplinasSeed = (): Disciplina[] => [
     preRequisitos: ['disc-1', 'disc-2'],
     horarios: [{ dia: 1, inicio: '09:00', fim: '11:00' }],
   }),
-  // Sem pré-requisitos, mas colide com ALG101 (seg 08–10) e ALG102 (seg/qua 10–12): serve para demonstrar o choque de horário.
   new Disciplina({
     id: 'disc-5',
     codigo: 'RED202',

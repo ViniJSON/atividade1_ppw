@@ -38,7 +38,6 @@ export class Disciplina {
     this.horarios = Disciplina.validarGrade(props.horarios ?? []);
   }
 
-  /** Valida cada faixa e impede sobreposição entre faixas da própria disciplina. */
   static validarGrade(horarios: Horario[]): Horario[] {
     horarios.forEach(validarHorario);
     for (let i = 0; i < horarios.length; i++) {

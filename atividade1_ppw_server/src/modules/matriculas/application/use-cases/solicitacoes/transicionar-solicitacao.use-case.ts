@@ -15,15 +15,6 @@ export interface TransicionarInput {
   justificativa?: string;
 }
 
-/**
- * ÚNICO caminho para mudar o status de uma solicitação. Responsabilidade (SRP): orquestrar
- * "carregar → autorizar → guardar → aplicar efeito → mudar estado → auditar" dentro de UMA
- * transação. Não contém nenhuma regra de negócio específica: elas vêm da tabela de regras
- * (state machine), das guardas e dos handlers por tipo.
- *
- * Ordem de aquisição de locks (sempre a mesma, para evitar deadlock entre transações):
- *   solicitação → disciplina → aluno.
- */
 @Injectable()
 export class TransicionarSolicitacaoUseCase {
   constructor(
@@ -40,7 +31,6 @@ export class TransicionarSolicitacaoUseCase {
 
       const regra = this.maquina.resolver(solicitacao.status, input.evento, input.actor.papel);
 
-      // Só trava disciplina/aluno quando a transição tem efeito sobre vaga/matrícula.
       const comEfeito = regra.efeito !== undefined;
       const disciplina = comEfeito
         ? await repos.disciplinas.findByIdForUpdate(solicitacao.disciplinaId)
@@ -82,7 +72,6 @@ export class TransicionarSolicitacaoUseCase {
       regra.aoAplicar?.(ctx);
       await repos.solicitacoes.save(solicitacao);
 
-      // Mesma transação: se esta linha falhar, o efeito em vaga/matrícula e o novo estado são desfeitos.
       await repos.historico.registrar({
         idRegistro: solicitacao.id,
         evento: input.evento,

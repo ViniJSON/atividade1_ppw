@@ -15,7 +15,6 @@ export enum StatusSolicitacao {
   ESTORNADA = 'ESTORNADA',
 }
 
-/** Ações que movem a solicitação na máquina de estados. Status nunca é editado diretamente. */
 export enum EventoSolicitacao {
   CRIAR = 'CRIAR',
   INICIAR_ANALISE = 'INICIAR_ANALISE',
@@ -34,11 +33,9 @@ export enum PapelUsuario {
   ALUNO = 'ALUNO',
   COORDENADOR = 'COORDENADOR',
   SECRETARIA = 'SECRETARIA',
-  /** Papel interno (job de SLA). Nunca aceito vindo de uma requisição HTTP. */
   SISTEMA = 'SISTEMA',
 }
 
-/** Estados em que a solicitação ainda "ocupa" o par (aluno, disciplina, tipo). */
 export const STATUS_ABERTOS: readonly StatusSolicitacao[] = [
   StatusSolicitacao.PENDENTE,
   StatusSolicitacao.EM_ANALISE,
@@ -46,7 +43,6 @@ export const STATUS_ABERTOS: readonly StatusSolicitacao[] = [
   StatusSolicitacao.APROVADA,
 ];
 
-/** Estados anteriores à aprovação: é onde o relógio do SLA corre. */
 export const STATUS_EM_ATENDIMENTO: readonly StatusSolicitacao[] = [
   StatusSolicitacao.PENDENTE,
   StatusSolicitacao.EM_ANALISE,

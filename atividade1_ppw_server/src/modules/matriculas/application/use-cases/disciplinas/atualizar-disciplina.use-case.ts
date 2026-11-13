@@ -14,7 +14,6 @@ export interface AtualizarDisciplinaInput {
   nome: string;
   vagasTotais: number;
   preRequisitos?: string[];
-  /** Se omitido, a grade atual é preservada. */
   horarios?: Horario[];
 }
 
@@ -38,7 +37,6 @@ export class AtualizarDisciplinaUseCase {
     const preRequisitos = input.preRequisitos ?? [];
     await garantirDisciplinasExistem(this.disciplinas, preRequisitos);
 
-    // Uma consulta (CTE recursiva no Postgres) em vez de carregar todas as disciplinas.
     const alcancaveis = await this.disciplinas.preRequisitosTransitivos(preRequisitos);
     if (alcancaveis.has(id)) {
       throw new BusinessRuleError(

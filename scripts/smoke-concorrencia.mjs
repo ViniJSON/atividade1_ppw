@@ -1,8 +1,3 @@
-// Teste de fumaça de CONCORRÊNCIA sobre HTTP (Node 18+, sem dependências).
-// Uso:  node scripts/smoke-concorrencia.mjs [http://localhost:3001]
-// Cria uma disciplina com UMA vaga, duas matrículas aprovadas e dispara as duas efetivações ao
-// mesmo tempo. Esperado: exatamente uma 200 e uma 400 ("Não há vaga"), vagasOcupadas = 1.
-// Rodando com PERSISTENCE=postgres, quem serializa as duas é o SELECT ... FOR UPDATE do banco.
 const API = process.argv[2] ?? 'http://localhost:3001';
 const ator = (id, papel) => ({ 'X-Actor-Id': id, 'X-Actor-Role': papel });
 const coord = ator('coord-1', 'COORDENADOR');

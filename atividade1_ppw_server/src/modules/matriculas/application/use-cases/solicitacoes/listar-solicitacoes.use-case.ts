@@ -8,7 +8,6 @@ import { Actor } from '../../../domain/workflow/types';
 export class ListarSolicitacoesUseCase {
   constructor(private readonly solicitacoes: SolicitacaoRepository) {}
 
-  /** Aluno enxerga só as próprias; coordenação e secretaria enxergam todas. */
   async execute(actor: Actor): Promise<Solicitacao[]> {
     const todas =
       actor.papel === PapelUsuario.ALUNO

@@ -11,11 +11,6 @@ export interface ResultadoSla {
   falhas: { id: string; evento: EventoSolicitacao; erro: string }[];
 }
 
-/**
- * Varredura de SLA. Cada item é processado em SUA PRÓPRIA transação (via Transicionar):
- * se um falhar, os demais seguem — uma solicitação problemática não trava o lote.
- * É idempotente: expirada/escalonada não volta a ser candidata.
- */
 @Injectable()
 export class ProcessarSlaUseCase {
   constructor(

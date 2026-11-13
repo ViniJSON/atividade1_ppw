@@ -53,12 +53,12 @@ describe('Solicitações — criação', () => {
 
   it('sinaliza pré-requisito pendente, falta de vaga e choque de horário', async () => {
     const ctx = makeUseCases();
-    const a = await matricula(ctx, bruno, 'disc-3'); // sem ALG101 concluída e turma cheia
+    const a = await matricula(ctx, bruno, 'disc-3');
     expect(a.preRequisitosOk).toBe(false);
     expect(a.vagaDisponivel).toBe(false);
     expect(a.semConflitoHorario).toBe(true);
 
-    const b = await matricula(ctx, bruno, 'disc-5'); // RED202 seg 08:30 colide com ALG101 seg 08:00
+    const b = await matricula(ctx, bruno, 'disc-5'); 
     expect(b.semConflitoHorario).toBe(false);
   });
 
@@ -149,13 +149,12 @@ describe('Solicitações — máquina de estados e RBAC', () => {
   it('matriz RBAC: papel sem permissão → 403, inclusive sem revelar o estado (403 antes de 409)', async () => {
     const ctx = makeUseCases();
     const s = await matricula(ctx);
-    // aluno tentando aprovar uma PENDENTE: é 403 (papel), não 409 (estado)
     await expect(ctx.agir(s.id, E.APROVAR, ana)).rejects.toBeInstanceOf(ForbiddenError);
     await expect(ctx.agir(s.id, E.INICIAR_ANALISE, secretaria)).rejects.toBeInstanceOf(ForbiddenError);
     await expect(ctx.agir(s.id, E.EXPIRAR, coordenador)).rejects.toBeInstanceOf(ForbiddenError);
     await emAnalise(ctx, s.id);
     await ctx.agir(s.id, E.APROVAR, coordenador);
-    await expect(ctx.agir(s.id, E.CONCLUIR, coordenador)).rejects.toBeInstanceOf(ForbiddenError); // separação de funções
+    await expect(ctx.agir(s.id, E.CONCLUIR, coordenador)).rejects.toBeInstanceOf(ForbiddenError); 
     await expect(ctx.agir(s.id, E.CONCLUIR, ana)).rejects.toBeInstanceOf(ForbiddenError);
   });
 
@@ -245,7 +244,7 @@ describe('Solicitações — máquina de estados e RBAC', () => {
     await aprovada(ctx, t.id);
     await ctx.agir(t.id, E.CONCLUIR, secretaria);
     const disc = (await ctx.repos.disciplinas.findById('disc-1'))!;
-    disc.vagasOcupadas = disc.vagasTotais; // outro aluno ocupou a vaga liberada
+    disc.vagasOcupadas = disc.vagasTotais; 
     const antes = (await eventos(ctx, t.id)).length;
 
     await expect(ctx.agir(t.id, E.ESTORNAR, coordenador, 'tentativa')).rejects.toThrow('vaga já foi ocupada');
@@ -290,7 +289,7 @@ describe('Solicitações — guardas de elegibilidade', () => {
 
     const a = await matricula(ctx, ana, 'h-a');
     await aprovada(ctx, a.id);
-    await ctx.agir(a.id, E.CONCLUIR, secretaria); // h-a entra na grade da Ana
+    await ctx.agir(a.id, E.CONCLUIR, secretaria); 
 
     const b = await matricula(ctx, ana, 'h-b');
     expect((await aprovada(ctx, b.id)).status).toBe(S.APROVADA);
@@ -305,7 +304,7 @@ describe('Solicitações — guardas de elegibilidade', () => {
     const s = await matricula(ctx);
     await aprovada(ctx, s.id);
     const disc = (await ctx.repos.disciplinas.findById('disc-2'))!;
-    disc.vagasOcupadas = disc.vagasTotais; // outros alunos foram efetivados nesse meio-tempo
+    disc.vagasOcupadas = disc.vagasTotais; 
 
     await expect(ctx.agir(s.id, E.CONCLUIR, secretaria)).rejects.toBeInstanceOf(GuardViolationError);
     expect((await ctx.repos.solicitacoes.findById(s.id))?.status).toBe(S.APROVADA);
@@ -352,7 +351,7 @@ describe('Solicitações — concorrência', () => {
     await novaDisciplinaComUmaVaga(ctx);
     const a = await matricula(ctx, ana, 'disc-9');
     const b = await matricula(ctx, bruno, 'disc-9');
-    await aprovada(ctx, a.id); // ambas aprovadas enquanto ainda havia vaga
+    await aprovada(ctx, a.id); 
     await aprovada(ctx, b.id);
 
     const resultados = await Promise.allSettled([
@@ -417,7 +416,7 @@ describe('Solicitações — atomicidade e auditoria (ACID)', () => {
     expect((await ctx.repos.alunos.findById('aluno-1'))?.disciplinasAtivas).toEqual([]);
     expect((await eventos(ctx, s.id)).length).toBe(antes);
 
-    historico.falhar = false; // sem resíduo: a mesma ação agora completa normalmente
+    historico.falhar = false; 
     await ctx.agir(s.id, E.CONCLUIR, secretaria);
     expect((await ctx.repos.disciplinas.findById('disc-2'))?.vagasOcupadas).toBe(1);
   });
@@ -431,9 +430,8 @@ describe('Solicitações — atomicidade e auditoria (ACID)', () => {
     expect(repo.update).toBeUndefined();
     expect(Object.isFrozen(h)).toBe(true);
     try {
-      (h as { justificativa: string | null }).justificativa = 'adulterado'; // lança em strict mode; ignorado fora dele
+      (h as { justificativa: string | null }).justificativa = 'adulterado'; 
     } catch {
-      /* esperado em strict mode */
     }
     expect((await ctx.repos.historico.listarPorSolicitacao(s.id))[0].justificativa).toBeNull();
   });
@@ -518,7 +516,6 @@ describe('Solicitações — SLA, escalonamento e expiração', () => {
     const a = await matricula(ctx, ana, 'disc-2');
     const b = await matricula(ctx, bruno, 'disc-5');
     ctx.clock.avancarDias(8);
-    // sabota apenas a solicitação `a`: a disciplina some, a transição falha com NotFound
     await ctx.repos.disciplinas.delete('disc-2');
     const r = await ctx.solicitacoes.sla.execute();
     expect(r.falhas.map((f) => f.id)).toEqual([a.id]);

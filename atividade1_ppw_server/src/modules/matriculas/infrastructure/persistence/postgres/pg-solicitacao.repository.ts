@@ -73,7 +73,6 @@ export class PgSolicitacaoRepository extends SolicitacaoRepository {
     return (await this.buscar('WHERE id = $1', [id]))[0] ?? null;
   }
 
-  /** Serializa dois atores agindo na MESMA solicitação (o segundo espera o COMMIT do primeiro). */
   async findByIdForUpdate(id: string): Promise<Solicitacao | null> {
     return (await this.buscar('WHERE id = $1', [id], 'FOR UPDATE'))[0] ?? null;
   }
@@ -124,7 +123,6 @@ export class PgSolicitacaoRepository extends SolicitacaoRepository {
       s.versao = 1;
       return;
     }
-    // Controle otimista (além do FOR UPDATE): protege também caminhos que não travaram a linha.
     const r = await this.db.query(
       `UPDATE solicitacoes
        SET status = $2, ultima_justificativa = $3, atualizado_em = $4, prazo_limite = $5,

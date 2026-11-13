@@ -7,7 +7,6 @@ export interface SolicitacaoProps {
   disciplinaId: string;
   tipo: TipoSolicitacao;
   status?: StatusSolicitacao;
-  /** Indicadores calculados no momento do pedido (informativos; as guardas reavaliam na aprovação/conclusão). */
   preRequisitosOk: boolean;
   vagaDisponivel: boolean;
   semConflitoHorario: boolean;
@@ -17,7 +16,6 @@ export interface SolicitacaoProps {
   prazoLimite: string;
   escalonarEm: string;
   escalonadaEm?: string;
-  /** 0 = ainda não persistida. Incrementada a cada save (controle otimista de concorrência). */
   versao?: number;
 }
 
@@ -40,10 +38,6 @@ export class Solicitacao {
   readonly vagaDisponivel: boolean;
   readonly semConflitoHorario: boolean;
   readonly criadoEm: string;
-
-  // `_status` é privado de propósito: não existe setter público. A única porta de
-  // mudança é `transitarPara`, chamada pelo TransicionarSolicitacaoUseCase após
-  // validar regra, papel e guardas da máquina de estados.
   private _status: StatusSolicitacao;
   ultimaJustificativa?: string;
   atualizadoEm: string;
@@ -95,14 +89,12 @@ export class Solicitacao {
     return !this.escalonadaEm && agora.getTime() >= new Date(this.escalonarEm).getTime();
   }
 
-  /** Uso exclusivo da máquina de estados. `novo === atual` é válido (ex.: ESCALONAR mantém o estado). */
   transitarPara(novo: StatusSolicitacao, agora: Date, justificativa?: string): void {
     this._status = novo;
     this.atualizadoEm = agora.toISOString();
     if (justificativa) this.ultimaJustificativa = justificativa;
   }
 
-  /** Após REENVIAR o relógio do SLA recomeça. */
   reiniciarPrazo(agora: Date, sla: SlaConfig): void {
     this.prazoLimite = adicionarDias(agora, sla.prazoDias).toISOString();
     this.escalonarEm = adicionarDias(agora, sla.escalonamentoDias).toISOString();

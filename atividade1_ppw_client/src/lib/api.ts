@@ -21,7 +21,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
-        // Identificação do ator (simplificação didática; em produção viria de um token de login).
         'X-Actor-Id': perfilAtual().id,
         'X-Actor-Role': perfilAtual().papel,
         ...options.headers,

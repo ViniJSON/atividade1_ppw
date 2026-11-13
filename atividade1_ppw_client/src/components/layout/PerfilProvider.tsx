@@ -15,10 +15,6 @@ import { Select } from '@/components/ui/select';
 const PerfilContext = createContext<Perfil>(PERFIL_PADRAO);
 export const usePerfil = () => useContext(PerfilContext);
 
-/**
- * Só renderiza os filhos depois de carregar o perfil salvo: assim nenhuma requisição sai sem
- * cabeçalhos de ator. Trocar de perfil remonta a árvore (key) e recarrega os dados já com o novo papel.
- */
 export function PerfilProvider({ children }: { children: ReactNode }) {
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [alunos, setAlunos] = useState<Aluno[]>([]);

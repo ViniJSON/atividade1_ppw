@@ -1,10 +1,6 @@
 import { BusinessRuleError } from '../../domain/errors/domain.errors';
 import { DisciplinaRepository } from '../../domain/repositories/disciplina.repository';
 
-/**
- * Uma única consulta (`findByIds`) em vez de um `findById` por disciplina:
- * a versão anterior fazia N consultas para N ids (N+1).
- */
 export async function garantirDisciplinasExistem(
   repo: DisciplinaRepository,
   ids: string[],

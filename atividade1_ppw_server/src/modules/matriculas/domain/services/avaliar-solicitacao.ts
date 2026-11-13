@@ -10,11 +10,6 @@ export interface ResultadoAvaliacao {
   semConflitoHorario: boolean;
 }
 
-/**
- * Pré-checagem no momento do pedido: barra pedidos impossíveis (já matriculado / não matriculado)
- * e devolve indicadores informativos. A decisão definitiva é das guardas na aprovação/conclusão.
- * `ativas` = disciplinas da grade atual do aluno, carregadas em lote por quem chama.
- */
 export function avaliarSolicitacao(
   aluno: Aluno,
   disciplina: Disciplina,

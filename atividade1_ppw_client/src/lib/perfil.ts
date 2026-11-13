@@ -13,7 +13,6 @@ export const PERFIL_SECRETARIA: Perfil = { id: 'sec-1', papel: 'SECRETARIA', rot
 
 let atual: Perfil = PERFIL_PADRAO;
 
-/** Lido pelo cliente HTTP para preencher X-Actor-Id / X-Actor-Role. */
 export const perfilAtual = () => atual;
 
 export function definirPerfil(perfil: Perfil): void {
@@ -21,7 +20,6 @@ export function definirPerfil(perfil: Perfil): void {
   try {
     window.localStorage.setItem(CHAVE, JSON.stringify(perfil));
   } catch {
-    /* armazenamento indisponível: o perfil vale só nesta sessão */
   }
 }
 
@@ -36,7 +34,6 @@ export function carregarPerfilSalvo(): Perfil {
       }
     }
   } catch {
-    /* ignora valor corrompido */
   }
   atual = PERFIL_PADRAO;
   return PERFIL_PADRAO;

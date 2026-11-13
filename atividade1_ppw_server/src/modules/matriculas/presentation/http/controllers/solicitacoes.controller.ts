@@ -20,11 +20,7 @@ import { toSolicitacaoView } from '../views/solicitacao.view';
 
 type SolicitacaoView = ReturnType<typeof toSolicitacaoView>;
 
-/**
- * Não existe PUT/DELETE de solicitação nem campo `status` em nenhum DTO: o status só muda
- * pelas ações abaixo, cada uma disparando UM evento da máquina de estados.
- * Quem pode o quê, e em que estado, é decidido no domínio (matriz RBAC + guardas), não aqui.
- */
+
 @Controller('matriculas/solicitacoes')
 export class SolicitacoesController {
   constructor(
@@ -59,7 +55,6 @@ export class SolicitacoesController {
     return toSolicitacaoView(await this.criar.execute(dto, actor), this.maquina, actor.papel);
   }
 
-  /** Dispara a varredura de SLA manualmente (o agendador faz o mesmo periodicamente). */
   @Post('sla/processar')
   @HttpCode(200)
   processarSla(@CurrentActor() actor: Actor): Promise<ResultadoSla> {

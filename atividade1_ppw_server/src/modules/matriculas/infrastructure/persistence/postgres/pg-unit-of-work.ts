@@ -8,11 +8,6 @@ import { PgHistoricoRepository } from './pg-historico.repository';
 import { PgPool } from './pg-pool';
 import { PgSolicitacaoRepository } from './pg-solicitacao.repository';
 
-/**
- * Transação ACID de verdade: BEGIN → work(repos ligados ao MESMO client) → COMMIT, ou ROLLBACK
- * se qualquer coisa lançar. Nível de isolamento READ COMMITTED (padrão) + travas de linha
- * (`FOR UPDATE`) nos pontos críticos: solicitação, disciplina e aluno, sempre nessa ordem.
- */
 @Injectable()
 export class PgUnitOfWork extends UnitOfWork {
   constructor(private readonly db: PgPool) {

@@ -11,7 +11,6 @@ const bruno = como('aluno-2', 'ALUNO');
 const coord = como('coord-1', 'COORDENADOR');
 const sec = como('sec-1', 'SECRETARIA');
 
-// Roda com PERSISTENCE=memory (padrão). Para validar contra o Postgres: PERSISTENCE=postgres DATABASE_URL=...
 describe('API de matrículas (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -105,7 +104,6 @@ describe('API de matrículas (e2e)', () => {
   it('fluxo completo via HTTP: criar → analisar → aprovar → concluir, com trilha de auditoria', async () => {
     const http = request(app.getHttpServer());
 
-    // `status` no corpo é descartado pelo ValidationPipe (whitelist): não há como forçar um estado.
     const criada = await http
       .post('/matriculas/solicitacoes')
       .set(ana)
@@ -115,17 +113,16 @@ describe('API de matrículas (e2e)', () => {
     expect(criada.body.status).toBe('PENDENTE');
     expect(criada.body.acoesPermitidas).toEqual(['CANCELAR']);
 
-    await http.patch(`/matriculas/solicitacoes/${id}/aprovar`).set(ana).expect(403); // aluno não aprova
-    await http.patch(`/matriculas/solicitacoes/${id}/aprovar`).set(coord).expect(409); // falta analisar
-    await http.patch(`/matriculas/solicitacoes/${id}/rejeitar`).set(coord).send({}).expect(400); // sem justificativa
+    await http.patch(`/matriculas/solicitacoes/${id}/aprovar`).set(ana).expect(403);
+    await http.patch(`/matriculas/solicitacoes/${id}/aprovar`).set(coord).expect(409); 
+    await http.patch(`/matriculas/solicitacoes/${id}/rejeitar`).set(coord).send({}).expect(400); 
     await http.patch(`/matriculas/solicitacoes/${id}/iniciar-analise`).set(coord).expect(200);
     await http
       .patch(`/matriculas/solicitacoes/${id}/aprovar`)
       .set(coord)
       .expect(200)
       .expect((res) => expect(res.body.acoesPermitidas).toContain('REJEITAR'));
-    await http.patch(`/matriculas/solicitacoes/${id}/concluir`).set(coord).expect(403); // quem aprova não efetiva
-    await http
+    await http.patch(`/matriculas/solicitacoes/${id}/concluir`).set(coord).expect(403);
       .patch(`/matriculas/solicitacoes/${id}/concluir`)
       .set(sec)
       .expect(200)

@@ -14,7 +14,6 @@ interface LinhaDisciplina {
   horarios: Horario[];
 }
 
-// Disciplina + pré-requisitos + horários numa única consulta (sem N+1).
 const SELECT_DISCIPLINA = `
   SELECT d.id, d.codigo, d.nome, d.vagas_totais, d.vagas_ocupadas,
     COALESCE((SELECT array_agg(p.pre_requisito_id ORDER BY p.pre_requisito_id)
@@ -53,10 +52,6 @@ export class PgDisciplinaRepository extends DisciplinaRepository {
     return rows[0] ? paraEntidade(rows[0]) : null;
   }
 
-  /**
-   * Lock pessimista na linha da disciplina: duas efetivações concorrentes para a última vaga são
-   * serializadas aqui; a segunda só lê `vagas_ocupadas` depois que a primeira deu COMMIT.
-   */
   async findByIdForUpdate(id: string): Promise<Disciplina | null> {
     await this.db.query('SELECT 1 FROM disciplinas WHERE id = $1 FOR UPDATE', [id]);
     return this.findById(id);
@@ -78,11 +73,6 @@ export class PgDisciplinaRepository extends DisciplinaRepository {
     return rows[0] ? paraEntidade(rows[0]) : null;
   }
 
-  /**
-   * CTE recursiva: percorre o grafo de pré-requisitos inteiro numa só ida ao banco.
-   * `UNION` (e não `UNION ALL`) descarta duplicatas, então a recursão termina mesmo se
-   * já existir ciclo nos dados.
-   */
   async preRequisitosTransitivos(ids: string[]): Promise<Set<string>> {
     if (ids.length === 0) return new Set();
     const { rows } = await this.db.query<{ id: string }>(

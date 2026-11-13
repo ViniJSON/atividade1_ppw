@@ -1,6 +1,5 @@
 import { BusinessRuleError } from '../errors/domain.errors';
 
-/** Faixa semanal de aula. `dia`: 1 = segunda … 7 = domingo. Horas no formato "HH:MM". */
 export interface Horario {
   dia: number;
   inicio: string;
@@ -21,11 +20,6 @@ export function validarHorario(h: Horario): void {
   }
 }
 
-/**
- * Dois horários colidem se são no mesmo dia e os intervalos se sobrepõem.
- * Intervalos semiabertos: 08:00–10:00 e 10:00–12:00 NÃO colidem.
- * A comparação de strings "HH:MM" funciona porque o formato é zero-padded.
- */
 export function horariosConflitam(a: Horario, b: Horario): boolean {
   return a.dia === b.dia && a.inicio < b.fim && b.inicio < a.fim;
 }

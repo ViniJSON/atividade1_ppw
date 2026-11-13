@@ -5,10 +5,6 @@ import { descreverHorario } from '../../value-objects/horario';
 import { TransitionContext } from '../types';
 import { BaseGuard } from './base.guard';
 
-// Cada guarda tem UMA responsabilidade (SRP) e nenhuma conhece a máquina de estados:
-// elas só recebem o contexto e lançam erro se a regra for violada.
-
-/** Eventos sensíveis exigem justificativa (vai para a trilha de auditoria). */
 export class JustificativaObrigatoriaGuard extends BaseGuard {
   readonly nome = 'justificativa-obrigatoria';
   verificar(ctx: TransitionContext): Promise<void> {
@@ -19,7 +15,6 @@ export class JustificativaObrigatoriaGuard extends BaseGuard {
   }
 }
 
-/** Um aluno só age sobre as próprias solicitações; coordenação/secretaria não têm essa restrição. */
 export class SolicitanteGuard extends BaseGuard {
   readonly nome = 'solicitante';
   aplicaA(ctx: TransitionContext): boolean {
@@ -46,7 +41,6 @@ export class PrazoNaoVencidoGuard extends BaseGuard {
   }
 }
 
-/** EXPIRAR só vale se o prazo realmente venceu: nem o sistema expira antes da hora. */
 export class PrazoVencidoGuard extends BaseGuard {
   readonly nome = 'prazo-vencido';
   verificar(ctx: TransitionContext): Promise<void> {
@@ -99,11 +93,6 @@ export class MatriculadoGuard extends BaseGuard {
   }
 }
 
-/**
- * Pré-requisitos sem N+1: a disciplina já traz `preRequisitos` (ids) e o aluno traz
- * `disciplinasConcluidas`; o cruzamento é em memória. Só quando há faltantes é feita
- * UMA consulta em lote (findByIds) para nomear o que falta na mensagem.
- */
 export class PreRequisitosGuard extends BaseGuard {
   readonly nome = 'pre-requisitos';
   aplicaA(ctx: TransitionContext): boolean {
@@ -121,7 +110,6 @@ export class PreRequisitosGuard extends BaseGuard {
   }
 }
 
-/** Choque de horário na grade semanal: a grade ativa do aluno é carregada em UMA consulta. */
 export class ChoqueHorarioGuard extends BaseGuard {
   readonly nome = 'choque-horario';
   aplicaA(ctx: TransitionContext): boolean {

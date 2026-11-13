@@ -21,7 +21,6 @@ export class InMemoryAlunoRepository extends AlunoRepository {
     return Promise.resolve(this.items.get(id) ?? null);
   }
 
-  /** Sem locks reais: a exclusão mútua é garantida pelo InMemoryUnitOfWork. */
   findByIdForUpdate(id: string): Promise<Aluno | null> {
     return this.findById(id);
   }

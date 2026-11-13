@@ -5,7 +5,7 @@ import { HistoricoRepository } from '../../../domain/repositories/historico.repo
 import { PgExecutor } from './pg-executor';
 
 interface LinhaHistorico {
-  id: string; // bigserial chega como string
+  id: string; 
   id_registro: string;
   evento: EventoSolicitacao;
   estado_anterior: StatusSolicitacao | null;
@@ -33,7 +33,6 @@ const paraEntidade = (r: LinhaHistorico): HistoricoSolicitacao => ({
   timestamp: r.criado_em.toISOString(),
 });
 
-/** Só INSERT e SELECT. UPDATE/DELETE são, além disso, bloqueados por trigger no banco. */
 @Injectable()
 export class PgHistoricoRepository extends HistoricoRepository {
   constructor(private readonly db: PgExecutor) {

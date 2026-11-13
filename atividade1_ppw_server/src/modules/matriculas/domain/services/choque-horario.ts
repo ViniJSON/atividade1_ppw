@@ -7,11 +7,6 @@ export interface ConflitoHorario {
   existente: Horario;
 }
 
-/**
- * Função pura: compara a disciplina candidata com a grade atual do aluno.
- * Quem chama é responsável por carregar `ativas` de uma só vez (Disciplinas.findByIds),
- * evitando consultar disciplina por disciplina.
- */
 export function encontrarConflitos(
   candidata: Disciplina,
   ativas: readonly Disciplina[],

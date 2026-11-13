@@ -6,7 +6,6 @@ import { Select } from '@/components/ui/select';
 import { DIAS } from '@/lib/solicitacao-ui';
 import { Horario } from '@/types';
 
-/** Edita a grade semanal da disciplina (usada no cálculo de choque de horário). */
 export function HorariosEditor({
   value,
   onChange,

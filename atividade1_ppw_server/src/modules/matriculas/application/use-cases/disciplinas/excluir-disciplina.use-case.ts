@@ -34,7 +34,6 @@ export class ExcluirDisciplinaUseCase {
       );
     }
 
-    // A trilha de auditoria é preservada: disciplina com solicitações registradas não pode ser apagada.
     const doDisciplina = await this.solicitacoes.findByDisciplinaId(id);
     if (doDisciplina.length > 0) {
       throw new BusinessRuleError(

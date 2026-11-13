@@ -24,7 +24,6 @@ export class CriarSolicitacaoUseCase {
   ) {}
 
   async execute(input: CriarSolicitacaoInput, actor: Actor): Promise<Solicitacao> {
-    // RBAC da criação: o aluno abre pedido para si; a secretaria abre em nome do aluno.
     const permitido =
       actor.papel === PapelUsuario.SECRETARIA ||
       (actor.papel === PapelUsuario.ALUNO && actor.id === input.alunoId);
@@ -38,12 +37,9 @@ export class CriarSolicitacaoUseCase {
       const disciplina = await repos.disciplinas.findById(input.disciplinaId);
       if (!disciplina) throw new NotFoundError('Disciplina não encontrada');
 
-      // Grade atual em UMA consulta (sem N+1).
       const ativas = await repos.disciplinas.findByIds(aluno.disciplinasAtivas);
       const indicadores = avaliarSolicitacao(aluno, disciplina, input.tipo, ativas);
 
-      // Duplicidade: no Postgres o índice único parcial é a defesa final contra corrida;
-      // esta checagem dá a mensagem amigável no caminho comum.
       if (await repos.solicitacoes.existeAberta(aluno.id, disciplina.id, input.tipo)) {
         throw new ConflictError('Já existe uma solicitação em aberto para este aluno, disciplina e tipo');
       }

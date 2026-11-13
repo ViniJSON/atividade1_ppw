@@ -22,7 +22,6 @@ export class ExcluirAlunoUseCase {
         'Não é possível excluir: o aluno está matriculado em disciplinas',
       );
     }
-    // A trilha de auditoria é preservada: quem tem solicitações registradas não pode ser apagado.
     const doAluno = await this.solicitacoes.findByAlunoId(id);
     if (doAluno.length > 0) {
       throw new BusinessRuleError(

@@ -32,7 +32,6 @@ export interface ConfigAcao {
   rotulo: string;
   sucesso: string;
   variante: 'default' | 'outline' | 'destructive' | 'ghost';
-  /** Pede justificativa ao usuário (o servidor também exige, via guarda). */
   justificativa: 'obrigatoria' | 'nenhuma';
   pergunta?: string;
 }

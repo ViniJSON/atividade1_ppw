@@ -10,7 +10,6 @@ export type StatusSolicitacao =
   | 'EXPIRADA'
   | 'ESTORNADA';
 
-/** Eventos que o usuário pode disparar (CRIAR/ESCALONAR/EXPIRAR são internos). */
 export type AcaoSolicitacao =
   | 'INICIAR_ANALISE'
   | 'SOLICITAR_AJUSTE'
@@ -24,7 +23,6 @@ export type AcaoSolicitacao =
 export type Papel = 'ALUNO' | 'COORDENADOR' | 'SECRETARIA';
 
 export interface Horario {
-  /** 1 = segunda … 7 = domingo */
   dia: number;
   inicio: string;
   fim: string;
@@ -64,7 +62,6 @@ export interface Solicitacao {
   escalonarEm: string;
   escalonadaEm?: string;
   versao: number;
-  /** Ações que o perfil atual pode tentar neste estado (vem da máquina de estados do servidor). */
   acoesPermitidas: AcaoSolicitacao[];
 }
 

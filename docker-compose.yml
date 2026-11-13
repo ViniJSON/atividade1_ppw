@@ -1,6 +1,3 @@
-# Sobe só o PostgreSQL; a API (NestJS) e o front (Next.js) rodam localmente com npm.
-# O schema e o seed são aplicados automaticamente na PRIMEIRA subida do volume.
-# Para recomeçar do zero: docker compose down -v && docker compose up -d
 services:
   db:
     image: postgres:16-alpine

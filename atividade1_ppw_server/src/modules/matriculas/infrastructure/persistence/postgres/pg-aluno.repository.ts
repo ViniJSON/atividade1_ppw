@@ -11,7 +11,6 @@ interface LinhaAluno {
   ativas: string[];
 }
 
-// Aluno + suas listas em UMA consulta (subselects agregados): sem N+1 ao listar alunos.
 const SELECT_ALUNO = `
   SELECT a.id, a.nome, a.matricula,
     COALESCE((SELECT array_agg(c.disciplina_id ORDER BY c.disciplina_id)
@@ -45,7 +44,6 @@ export class PgAlunoRepository extends AlunoRepository {
     return rows[0] ? paraEntidade(rows[0]) : null;
   }
 
-  /** Trava a linha de `alunos` até o fim da transação e então lê o agregado. */
   async findByIdForUpdate(id: string): Promise<Aluno | null> {
     await this.db.query('SELECT 1 FROM alunos WHERE id = $1 FOR UPDATE', [id]);
     return this.findById(id);

@@ -1,4 +1,3 @@
--- Dados iniciais equivalentes ao seed em memória (infrastructure/persistence/in-memory/seed.ts).
 INSERT INTO disciplinas (id, codigo, nome, vagas_totais, vagas_ocupadas) VALUES
   ('disc-1', 'ALG101', 'Algoritmos I',           2, 1),
   ('disc-2', 'ALG102', 'Algoritmos II',          2, 0),

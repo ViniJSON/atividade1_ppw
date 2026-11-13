@@ -66,7 +66,6 @@ const useCases = [
   ProcessarSlaUseCase,
 ];
 
-/** PERSISTENCE=memory (padrão; testes e demo sem Docker) ou PERSISTENCE=postgres. */
 const persistencia: Provider[] =
   process.env.PERSISTENCE === 'postgres'
     ? [
